@@ -47,7 +47,7 @@ function local_macromucho_extend_settings_navigation($navigation, $context) {
         $url = new moodle_url($CFG->wwwroot . '/local/macromucho/macromucho.php', array('courseid' => $id));
         $icon = new pix_icon('i/edit', '');
         $node = $navnode->create($urltext, $url, navigation_node::TYPE_SETTING, null, 'macromucho', $icon);
-        $navnode->add_node($node, 'macromucho');
+        $navnode->add_node($node, 'import');
     }
 }
 
