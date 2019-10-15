@@ -104,7 +104,7 @@ function set_mc_options($question) {
     $question->shuffleanswers = '1';
     $question->answernumbering = '123'; // Changed from default to allow >26 answers
     //Set shownumcorrect to 0 for multichoiceset since this is the default value
-    if ($question->type = $qtype == 'multichoiceset') {
+    if ($question->qtype == 'multichoiceset') {
         $question->shownumcorrect = '0';
     } else {
         $question->shownumcorrect = '1';
@@ -198,15 +198,16 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
 
                 // Get answers
                 $answercount = 0;
-                for ($i = 3; ; $i = $i + 2) {
-                    if (!$questionvariables[$i]) {break;}
+                $i = 3;
+                do {
                     $question->answer[$answercount] = array('text' => $questionvariables[$i], 'format' => FORMAT_HTML);
                     if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {
                         $question->correctanswer[$answercount] = '1';
                     }
                     $question->feedback[$answercount] = array('text' => '', 'format' => FORMAT_HTML);
                     $answercount++;
-                }
+                    $i = $i + 2;
+                } while (!$questionvariables[$i]);
 
                 // Save question and log success
                 $question->id = $DB->insert_record('question', $question);
@@ -231,8 +232,8 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                 $totalgrade = 0;
                 $hasmax = false;
 
-                for ($i = 3; ; $i = $i + 2) {
-                    if (!$questionvariables[$i]) {break;}
+                $i = 3;
+                do {
                     if (!$questionvariables[$i + 1]) {$numincorrect++;}
                     else if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {$numcorrect++;}
                     else if (trim($questionvariables[$i + 1] >= 0)) {
@@ -241,7 +242,9 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                     else if (strcasecmp(trim($questionvariables[$i + 1]), '') == 0) {$numincorrect++;}
                     else if (strcasecmp(trim($questionvariables[$i + 1]), 'f') == 0) {$numincorrect++;}
                     if (trim($questionvariables[$i + 1] >= 100)) {$hasmax = true;}
-                }
+                    $i = $i + 2;
+                } while (!$questionvariables[$i]);
+
                 // Check if at least one option gives 100% for single choice questions
                 if ($single == 1 && $numcorrect < 1 && $hasmax == false) {
                     array_push($importlog->text,
