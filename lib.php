@@ -102,7 +102,7 @@ function add_import_to_output($importlog, $question) {
 // Set question options for MC questions TODO: maybe possible to replace with built-in function?
 function set_mc_options($question) {
     $question->shuffleanswers = '1';
-    $question->answernumbering = '123'; // Changed from default to allow >26 answers
+    $question->answernumbering = 'abc';
     //Set shownumcorrect to 0 for multichoiceset since this is the default value
     if ($question->qtype == 'multichoiceset') {
         $question->shownumcorrect = '0';
@@ -166,10 +166,10 @@ function set_default_question_values($qtype, $catid, $context, $questionvariable
 function macromucho_import($qtype, $single, $catid, $context, $importdata) {
     global $DB;
     // Clean input text
-    $importdata = format_text($importdata, FORMAT_PLAIN, array('filter' => true, 'context' => $context));
+    $importdata = format_text($importdata, FORMAT_HTML);
 
     // Write each line of data into array and remove header
-    $importquestions = explode(PHP_EOL, $importdata);
+    $importquestions = preg_split('/\r\n|\r|\n/', $importdata);
     unset($importquestions[0]);
 
     // Initialize variables
@@ -198,16 +198,15 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
 
                 // Get answers
                 $answercount = 0;
-                $i = 3;
-                do {
+                for ($i = 3; ; $i = $i + 2) {
+                    if (!array_key_exists($i, $questionvariables)) {break;}
                     $question->answer[$answercount] = array('text' => $questionvariables[$i], 'format' => FORMAT_HTML);
                     if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {
                         $question->correctanswer[$answercount] = '1';
                     }
                     $question->feedback[$answercount] = array('text' => '', 'format' => FORMAT_HTML);
                     $answercount++;
-                    $i = $i + 2;
-                } while (!$questionvariables[$i]);
+                }
 
                 // Save question and log success
                 $question->id = $DB->insert_record('question', $question);
@@ -232,19 +231,17 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                 $totalgrade = 0;
                 $hasmax = false;
 
-                $i = 3;
-                do {
-                    if (!$questionvariables[$i + 1]) {$numincorrect++;}
+                for ($i = 3; ; $i = $i + 2) {
+                    if (!array_key_exists($i, $questionvariables)) {break;}
+                    if (!array_key_exists($i + 1, $questionvariables)) {$numincorrect++;}
                     else if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {$numcorrect++;}
                     else if (trim($questionvariables[$i + 1] >= 0)) {
                         $totalgrade = $totalgrade + pick_fraction($questionvariables[$i + 1]);
+                        if (trim($questionvariables[$i + 1] >= 100)) {$hasmax = true;}
                     }
                     else if (strcasecmp(trim($questionvariables[$i + 1]), '') == 0) {$numincorrect++;}
-                    else if (strcasecmp(trim($questionvariables[$i + 1]), 'f') == 0) {$numincorrect++;}
-                    if (trim($questionvariables[$i + 1] >= 100)) {$hasmax = true;}
-                    $i = $i + 2;
-                } while (!$questionvariables[$i]);
-
+                    else if (strcasecmp(trim($questionvariables[$i + 1]), 'f') == 0) {$numincorrect++;}                   
+                }
                 // Check if at least one option gives 100% for single choice questions
                 if ($single == 1 && $numcorrect < 1 && $hasmax == false) {
                     array_push($importlog->text,
@@ -307,9 +304,9 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                 // Get answers
                 $answercount = 0;
                 for ($i = 3; ; $i = $i + 2) {
-                    if (!$questionvariables[$i]) {break;}
+                    if (!array_key_exists($i, $questionvariables)) {break;}
                     $question->answer[$answercount] = array('text' => $questionvariables[$i], 'format' => FORMAT_HTML);
-                    if (!$questionvariables[$i + 1]) {
+                    if (!array_key_exists($i + 1, $questionvariables)) {
                         $question->fraction[$answercount] = 0;
                     } else if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {
                         $question->fraction[$answercount] = pick_fraction($correctfraction);

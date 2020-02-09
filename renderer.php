@@ -14,7 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/** 
+/**
+ * Renderer implementation for local_macromucho
+ *
+ * File         renderer.php
+ * Encoding     UTF-8
  *
  * @package     local_macromucho
  * @copyright   2019 Stefan Weber <webers@technikum-wien.at>
@@ -70,7 +74,11 @@ class local_macromucho_renderer extends \plugin_renderer_base {
             $qtype = $qtypes[$data->qtype];
             $importqtype = $qtype . '_importdata';
             $importdata = $data->{$importqtype};
-            $single = $data->singleormulti;
+            if (isset($data->singleormulti)) {
+                $single = $data->singleormulti;
+            } else {
+                $single = null;
+            }
             $category = explode(",", $data->category);
             $catid = $category[0];
 
@@ -78,9 +86,9 @@ class local_macromucho_renderer extends \plugin_renderer_base {
             $importlog = macromucho_import($qtype, $single, $catid, $context, $importdata);
 
             // Write results
-            $categorylist = new question_category_list('ul', '', true, $this->pageurl, null, 'cpage', QUESTION_PAGE_LENGTH, $context);
+            $categorylist = new question_category_list('ul', '', true, null, null, 'cpage', QUESTION_PAGE_LENGTH, $context);
             $categorylist->get_records();
-            $out .= get_string('category', 'moodle'). ': <b>' . $categorylist->records[$catid]->name . '</b><br>';
+            $out .= get_string('category', 'question'). ': <b>' . $categorylist->records[$catid]->name . '</b><br>';
             $out .= get_string('questiontype', 'question'). ': <b>';
             $out .= get_string('pluginname', 'qtype_'.$qtype) . '</b><br>';
             if ($qtype = 'multichoice') {

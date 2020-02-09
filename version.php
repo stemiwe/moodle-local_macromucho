@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_macromucho';
-$plugin->version   = 2019092403;
+$plugin->version   = 2020020701;
 $plugin->requires  = 2015111600;
-$plugin->release   = 'v1.00';
+$plugin->release   = 'v1.1';
 $plugin->maturity  = MATURITY_STABLE;
