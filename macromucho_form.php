@@ -25,7 +25,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/formslib.php');
 
-class macromucho_form extends moodleform {
+class local_macromucho_form extends moodleform {
     public function definition() {
         global $CFG, $DB;
 
@@ -59,10 +59,13 @@ class macromucho_form extends moodleform {
 
         $mform->hideif('singleormulti', 'qtype', 'neq', array_search('multichoice', $qtypes));
 
+        $copypastebutton = '<button title="' .  get_string('importdata_copypastebutton', 'local_macromucho') . '
+            " onclick="copyToClipboard()" class="btn btn-secondary float-right" name="copytoclipboard" type="button">
+            <i class="fa fa-clipboard"></i></button><br><br>';
+
         foreach ($qtypes as $qtypename) {
             $mform->addElement('textarea', $qtypename . '_importdata', get_string('importdata_description', 'local_macromucho') .
-                get_string('importdata_copypastebutton', 'local_macromucho') . '<br><br>' .
-                get_string('help_' . $qtypename, 'local_macromucho'), array('rows' => 12, 'cols' => 200));
+                $copypastebutton . get_string('help_' . $qtypename, 'local_macromucho'), array('rows' => 12, 'cols' => 200));
             $mform->setDefault($qtypename . '_importdata', get_string('importdata_' . $qtypename, 'local_macromucho'));
             $mform->setType($qtypename . '_importdata', PARAM_RAW);
             $mform->hideif($qtypename . '_importdata', 'qtype', 'neq', array_search($qtypename, $qtypes));

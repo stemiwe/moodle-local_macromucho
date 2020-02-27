@@ -1,3 +1,5 @@
+console.log('ASDF')
+
 function copyToClipboard() {
     var textAreas = document.getElementsByTagName("textarea");
 
@@ -9,5 +11,5 @@ function copyToClipboard() {
 
     copyText.select();
     copyText.setSelectionRange(0, 99999); /*For mobile devices*/
-    document.execCommand("copy");    
+    document.execCommand("copy");
 }

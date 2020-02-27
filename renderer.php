@@ -32,7 +32,7 @@ class local_macromucho_renderer extends \plugin_renderer_base {
     /**
      * return content for mass enrolment page.
      */
-    public function page_macromucho() {
+    public function local_macromucho_page() {
         global $CFG, $USER, $OUTPUT;
         require_once($CFG->dirroot . '/local/macromucho/macromucho_form.php');
         require_once($CFG->dirroot . '/local/macromucho/lib.php');
@@ -54,7 +54,7 @@ class local_macromucho_renderer extends \plugin_renderer_base {
         }
 
         // Create form
-        $mform = new macromucho_form(new moodle_url($CFG->wwwroot . '/local/macromucho/macromucho.php'), array(
+        $mform = new local_macromucho_form(new moodle_url($CFG->wwwroot . '/local/macromucho/macromucho.php'), array(
             'courseid' => $course->id,
             'context' => $context,
             'qtypes' => $qtypes,
@@ -83,7 +83,7 @@ class local_macromucho_renderer extends \plugin_renderer_base {
             $catid = $category[0];
 
             // Process import and get log
-            $importlog = macromucho_import($qtype, $single, $catid, $context, $importdata);
+            $importlog = local_macromucho_import($qtype, $single, $catid, $context, $importdata);
 
             // Write results
             $categorylist = new question_category_list('ul', '', true, null, null, 'cpage', QUESTION_PAGE_LENGTH, $context);

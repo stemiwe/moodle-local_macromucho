@@ -56,7 +56,7 @@ TF example 1	This statement is true.	1	t
 TF example 2	This statement is false.	1	f
 ';
 $string['importdata_description'] = 'Import field';
-$string['importdata_copypastebutton'] = '<button title="Copy to clipboard" onclick="copyToClipboard()" class="btn btn-secondary float-right" name="copytoclipboard" id="id_copytoclipboard" type="button"><i class="fa fa-clipboard"></i></button>';
+$string['importdata_copypastebutton'] = 'Copy to clipboard';
 $string['importsuccess'] = 'Import successful';
 $string['importerror'] = 'Insufficient parameters - skipping question';
 $string['importresult'] = 'Result of import';

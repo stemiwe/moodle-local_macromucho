@@ -37,14 +37,14 @@ require_capability('moodle/question:add', $context);
 
 // Create page.
 $PAGE->set_pagelayout('incourse');
-$PAGE->set_url(new moodle_url($CFG->wwwroot . '/local/macromucho/macromucho.php', array('courseid' => $courseid)));
+$PAGE->set_url(new moodle_url('/local/macromucho/macromucho.php', array('courseid' => $courseid)));
 $PAGE->set_title(get_string('pluginname', 'local_macromucho'));
 $PAGE->set_heading(get_string('pluginname', 'local_macromucho'));
 
 $renderer = $PAGE->get_renderer('local_macromucho');
-echo $renderer->page_macromucho();
+echo $renderer->local_macromucho_page();
 
 // Add javascript
-$script = $CFG->wwwroot . '/local/macromucho/macromucho_script.js';
+$script = new moodle_url('/local/macromucho/macromucho_script.js');
 echo '<script src="' . $script . '"></script>';
 exit;

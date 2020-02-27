@@ -52,7 +52,7 @@ function local_macromucho_extend_settings_navigation($navigation, $context) {
 }
 
 // Pick closest possible grade option for multiple choice questions
-function pick_fraction($fraction) {
+function local_macromucho_pick_fraction($fraction) {
     if ((int)$fraction == 0) {return 0;}
     $fraction = round((int)$fraction / 100, 2);
     $gradeoptions = question_bank::fraction_options();
@@ -70,7 +70,7 @@ function pick_fraction($fraction) {
 }
 
 // Check if all required parameters for a given line are set
-function check_required_params($nr, $questionvariables, $importlog) {
+function local_macromucho_check_required_params($nr, $questionvariables, $importlog) {
     for ($i = 1; $i < $nr; $i++) {
         if ($i > 3 && $i%2 == 0) {$i++;} // Jump over 'correct' columns
         if (!isset($questionvariables[$i]) || trim($questionvariables[$i]) == '') {
@@ -89,7 +89,7 @@ function check_required_params($nr, $questionvariables, $importlog) {
 }
 
 // Add successful import to output
-function add_import_to_output($importlog, $question) {
+function local_macromucho_add_import_to_output($importlog, $question) {
     array_push($importlog->text,
         get_string('question', 'moodle') . ' <b>'.
         $question->name . '</b>: ' .
@@ -100,7 +100,7 @@ function add_import_to_output($importlog, $question) {
 }
 
 // Set question options for MC questions TODO: maybe possible to replace with built-in function?
-function set_mc_options($question) {
+function local_macromucho_set_mc_options($question) {
     $question->shuffleanswers = '1';
     $question->answernumbering = 'abc';
     //Set shownumcorrect to 0 for multichoiceset since this is the default value
@@ -119,7 +119,7 @@ function set_mc_options($question) {
 }
 
 // Fill in default question values.
-function set_default_question_values($qtype, $catid, $context, $questionvariables) {
+function local_macromucho_set_default_question_values($qtype, $catid, $context, $questionvariables) {
     global $USER, $CFG;
 
     $qtypeclassname = 'qtype_'.$qtype;
@@ -163,7 +163,7 @@ function set_default_question_values($qtype, $catid, $context, $questionvariable
  * @param string $importdata    data from the import form
  * @return object $importlog    result of import
  */
-function macromucho_import($qtype, $single, $catid, $context, $importdata) {
+function local_macromucho_import($qtype, $single, $catid, $context, $importdata) {
     global $DB;
     // Clean input text
     $importdata = format_text($importdata, FORMAT_HTML);
@@ -187,11 +187,11 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
             $questionvariables = explode("\t", $importquestion);
 
             if (!isset($questionvariables[0]) || trim($questionvariables[0]) == '') {return $importlog;}
-            $importlog = check_required_params(6, $questionvariables, $importlog);
+            $importlog = local_macromucho_check_required_params(6, $questionvariables, $importlog);
 
             if ($importlog->pass) {
-                $question = set_default_question_values($qtype, $catid, $context, $questionvariables);
-                $question = set_mc_options($question);
+                $question = local_macromucho_set_default_question_values($qtype, $catid, $context, $questionvariables);
+                $question = local_macromucho_set_mc_options($question);
 
                 // I don't know what this field does, but multichoiceset questions have it all set to 0
                 if ($qtype == 'multichoiceset') {$question->layout = 0;}
@@ -201,8 +201,10 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                 for ($i = 3; ; $i = $i + 2) {
                     if (!array_key_exists($i, $questionvariables)) {break;}
                     $question->answer[$answercount] = array('text' => $questionvariables[$i], 'format' => FORMAT_HTML);
-                    if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {
-                        $question->correctanswer[$answercount] = '1';
+                    if (array_key_exists($i + 1, $questionvariables)) {
+                        if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {
+                            $question->correctanswer[$answercount] = '1';
+                        }
                     }
                     $question->feedback[$answercount] = array('text' => '', 'format' => FORMAT_HTML);
                     $answercount++;
@@ -211,7 +213,7 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                 // Save question and log success
                 $question->id = $DB->insert_record('question', $question);
                 $question->save_question_options($question);
-                $importlog = add_import_to_output($importlog, $question);
+                $importlog = local_macromucho_add_import_to_output($importlog, $question);
             }
         }
 
@@ -221,26 +223,27 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
             $questionvariables = explode("\t", $importquestion);
 
             if (!isset($questionvariables[0]) || trim($questionvariables[0]) == '') {return $importlog;}
-            $importlog = check_required_params(6, $questionvariables, $importlog);
+            $importlog = local_macromucho_check_required_params(6, $questionvariables, $importlog);
 
             // Check answers for errors and evaluate fractions
             if ($importlog->pass) {
-                $answercount = 0;
-                $numcorrect = 0;
-                $numincorrect = 0;
-                $totalgrade = 0;
-                $hasmax = false;
+                $answercount = 0; // Total number of answers
+                $numcorrect = 0; // Number of correct answers
+                $numincorrect = 0; // Number of incorrect answers
+                $incorrectfraction = 0; // Fraction for incorrect answers
+                $totalgrade = 0; // Total grade for the question
+                $hasmax = false; // Is it possible to reach 100% for this question
 
                 for ($i = 3; ; $i = $i + 2) {
                     if (!array_key_exists($i, $questionvariables)) {break;}
                     if (!array_key_exists($i + 1, $questionvariables)) {$numincorrect++;}
                     else if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {$numcorrect++;}
                     else if (trim($questionvariables[$i + 1] >= 0)) {
-                        $totalgrade = $totalgrade + pick_fraction($questionvariables[$i + 1]);
+                        $totalgrade = $totalgrade + local_macromucho_pick_fraction($questionvariables[$i + 1]);
                         if (trim($questionvariables[$i + 1] >= 100)) {$hasmax = true;}
                     }
                     else if (strcasecmp(trim($questionvariables[$i + 1]), '') == 0) {$numincorrect++;}
-                    else if (strcasecmp(trim($questionvariables[$i + 1]), 'f') == 0) {$numincorrect++;}                   
+                    else if (strcasecmp(trim($questionvariables[$i + 1]), 'f') == 0) {$numincorrect++;}
                 }
                 // Check if at least one option gives 100% for single choice questions
                 if ($single == 1 && $numcorrect < 1 && $hasmax == false) {
@@ -297,8 +300,8 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
 
             // Set question options
             if ($importlog->pass) {
-                $question = set_default_question_values($qtype, $catid, $context, $questionvariables);
-                $question = set_mc_options($question);
+                $question = local_macromucho_set_default_question_values($qtype, $catid, $context, $questionvariables);
+                $question = local_macromucho_set_mc_options($question);
                 $question->single = $single;
 
                 // Get answers
@@ -309,13 +312,13 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                     if (!array_key_exists($i + 1, $questionvariables)) {
                         $question->fraction[$answercount] = 0;
                     } else if (strcasecmp(trim($questionvariables[$i + 1]), 'x') == 0) {
-                        $question->fraction[$answercount] = pick_fraction($correctfraction);
+                        $question->fraction[$answercount] = local_macromucho_pick_fraction($correctfraction);
                     } else if (strcasecmp(trim($questionvariables[$i + 1]), '') == 0) {
-                        $question->fraction[$answercount] = pick_fraction($incorrectfraction);
+                        $question->fraction[$answercount] = local_macromucho_pick_fraction($incorrectfraction);
                     } else if (strcasecmp(trim($questionvariables[$i + 1]), 'f') == 0) {
-                        $question->fraction[$answercount] = pick_fraction($incorrectfraction);
+                        $question->fraction[$answercount] = local_macromucho_pick_fraction($incorrectfraction);
                     } else {
-                        $question->fraction[$answercount] = pick_fraction(trim($questionvariables[$i + 1]));
+                        $question->fraction[$answercount] = local_macromucho_pick_fraction(trim($questionvariables[$i + 1]));
                         if (abs($question->fraction[$answercount] * 100 - $questionvariables[$i + 1]) > 1) {
                             array_push($importlog->text,
                                 get_string('question', 'moodle') . ' <b>'.
@@ -333,7 +336,7 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                 // Save question and log success
                 $question->id = $DB->insert_record('question', $question);
                 $question->save_question_options($question);
-                $importlog = add_import_to_output($importlog, $question);
+                $importlog = local_macromucho_add_import_to_output($importlog, $question);
             }
         }
 
@@ -346,10 +349,10 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
             $questionvariables = explode("\t", $importquestion);
 
             if (!isset($questionvariables[0]) || trim($questionvariables[0]) == '') {return $importlog;}
-            $importlog = check_required_params(4, $questionvariables, $importlog);
+            $importlog = local_macromucho_check_required_params(4, $questionvariables, $importlog);
 
             if ($importlog->pass) {
-                $question = set_default_question_values($qtype, $catid, $context, $questionvariables);
+                $question = local_macromucho_set_default_question_values($qtype, $catid, $context, $questionvariables);
 
                 // Set question options
                 $question->feedbacktrue['format'] = FORMAT_HTML;
@@ -363,7 +366,7 @@ function macromucho_import($qtype, $single, $catid, $context, $importdata) {
                 // Save question and log success
                 $question->id = $DB->insert_record('question', $question);
                 $question->save_question_options($question);
-                $importlog = add_import_to_output($importlog, $question);
+                $importlog = local_macromucho_add_import_to_output($importlog, $question);
             }
         }
     }
